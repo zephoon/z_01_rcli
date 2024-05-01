@@ -2,6 +2,8 @@ use clap::Parser;
 use std::{fmt, str::FromStr};
 
 use super::verify_input_file;
+use crate::process_csv;
+use crate::CmdExecutor;
 
 #[derive(Debug, Clone, Copy)]
 pub enum OutputFormat {
@@ -25,6 +27,17 @@ pub struct CsvOpts {
 
 pub fn parse_format(format: &str) -> Result<OutputFormat, anyhow::Error> {
     format.parse::<OutputFormat>()
+}
+
+impl CmdExecutor for CsvOpts {
+    async fn execute(&self) -> anyhow::Result<()> {
+        let output = if let Some(output) = &self.output {
+            output.clone()
+        } else {
+            format!("format.{}", self.format)
+        };
+        process_csv(&self.input, output, self.format)
+    }
 }
 
 impl From<OutputFormat> for &'static str {

@@ -4,17 +4,11 @@ mod genpass;
 mod http;
 mod text;
 
-use std::path::{Path, PathBuf};
-
-use self::{csv::CsvOpts, genpass::GenPassOpts};
+pub use self::genpass::GenPassOpts;
+pub use self::{base64::*, csv::*, http::*, text::*};
 use clap::Parser;
-
-pub use self::{
-    base64::{Base64Format, Base64SubCommand},
-    csv::OutputFormat,
-    http::HttpSubCommand,
-    text::{TextSignFormat, TextSubCommand},
-};
+use enum_dispatch::enum_dispatch;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(name = "rcli", version, author, about, long_about = None)]
@@ -24,6 +18,7 @@ pub struct Opts {
 }
 
 #[derive(Parser, Debug)]
+#[enum_dispatch(CmdExecutor)]
 pub enum SubCommand {
     #[command(name = "csv", about = "Show CSV, or Convert CSV to other formats")]
     Csv(CsvOpts),
@@ -36,6 +31,18 @@ pub enum SubCommand {
     #[command(subcommand)]
     Http(HttpSubCommand),
 }
+
+// impl CmdExecutor for SubCommand {
+//     async fn execute(&self) -> anyhow::Result<()> {
+//         match self {
+//             SubCommand::Csv(opt) => opt.execute().await,
+//             SubCommand::Base64(opt) => opt.execute().await,
+//             SubCommand::GenPass(opt) => opt.execute().await,
+//             SubCommand::Text(opt) => opt.execute().await,
+//             SubCommand::Http(opt) => opt.execute().await,
+//         }
+//     }
+// }
 
 pub fn verify_input_file(filename: &str) -> Result<String, String> {
     if filename == "-" || Path::new(filename).exists() {

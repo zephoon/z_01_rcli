@@ -1,10 +1,14 @@
 use std::{fmt, str::FromStr};
 
 use clap::Parser;
+use enum_dispatch::enum_dispatch;
+
+use crate::{process_decode, process_encode, CmdExecutor};
 
 use super::verify_input_file;
 
 #[derive(Parser, Debug)]
+#[enum_dispatch(CmdExecutor)]
 pub enum Base64SubCommand {
     #[command(name = "encode", about = "Encode a string to base64")]
     Encode(Base64EncodeOpts),
@@ -61,5 +65,21 @@ impl From<Base64Format> for &'static str {
 impl fmt::Display for Base64Format {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", Into::<&str>::into(*self))
+    }
+}
+
+impl CmdExecutor for Base64EncodeOpts {
+    async fn execute(&self) -> anyhow::Result<()> {
+        let ret = process_encode(&self.input, self.format)?;
+        println!("{}", ret);
+        Ok(())
+    }
+}
+
+impl CmdExecutor for Base64DecodeOpts {
+    async fn execute(&self) -> anyhow::Result<()> {
+        let ret = process_decode(&self.input, self.format)?;
+        println!("{:?}", ret);
+        Ok(())
     }
 }
